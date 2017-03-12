@@ -200,13 +200,19 @@ def error_output(six_force, coll_mat, loop_num, data_per_loop):
     return err_output
 
 
-def error_windspeed(windspeed, rho, error_rho, loop_num):
-    """風速の相対不確かさを求める"""
-    pd = 0.5 * rho * windspeed ** 2
-    percision_pd = 0.03 / np.sqrt(loop_num)  # 差圧Pdの偶然誤差
-    bias_pd = (0.05 * 10 ** -3) * 999.97 * 9.81 / pd  # 差圧Pdのかたより誤差（マノメータ―の読み取り誤差0.05mmより算出）
-    err_windspeed = np.sqrt((0.5 * error_rho) ** 2 + (2 * 0.5 * percision_pd) ** 2 + (0.5 * bias_pd) ** 2)  # Pdの不確かさ幅
-    return err_windspeed
+def error_windspeed(windspeed, rho, error_rho, n_samples):
+    """風速の相対不確かさを求める
+    :param windspeed: 風速 [m/s]
+    :param rho: 空気密度 [kg/m^3]
+    :param error_rho: 空気密度の代表的な不確かさ [%]
+    :param n_samples: 試料数"""
+    C = 1.  # 風速の校正係数（壁面動圧から測定部動圧への補正　要修正）
+    pd = 0.5 * rho * (windspeed / C) ** 2
+    precision_pd = 2 * 0.03 / np.sqrt(n_samples)  # 差圧Pdの偶然誤差 [%]
+    bias_pd = 0.490 / pd  # 差圧Pdのかたより誤差 [%]（マノメータ―の読み取り誤差0.05mmより算出）
+    error_pd_squared = precision_pd ** 2 + bias_pd ** 2
+    error_wspeed = np.sqrt((0.5 * error_rho) ** 2 + 0.25 * error_pd_squared)  # Pdの不確かさ幅 [%]
+    return error_wspeed
 
 
 def error_rho(filename):
